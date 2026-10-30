@@ -33,6 +33,14 @@ class TasteTests(unittest.TestCase):
         path=self.root/'records.jsonl';path.write_text(json.dumps({'title':'Menu','url':'https://example.org/menu','snippet':'Visual hierarchy','provenance':'web search','tags':{'placement':'navigation'}})+'\n')
         report=t.discover(self.db,self.root,path);self.assertEqual(report['new_count'],1);self.assertEqual(t.discover(self.db,self.root,path)['new_count'],0)
         self.assertIn('web search',t.items(self.db)[0]['tags']['provenance'])
+    def test_undo_preserves_cap(self):
+        first=self.add(0);t.vote(self.db,first,'love')
+        for i in range(1,101):self.add(i)
+        with self.assertRaises(ValueError):t.undo(self.db)
+        self.assertEqual(sum(not i['vote'] for i in t.items(self.db)),100)
+    def test_undo_normal(self):
+        key=self.add();t.vote(self.db,key,'love');t.undo(self.db)
+        self.assertIsNone(t.items(self.db)[0]['vote'])
     def test_reject_bad_sources(self):
         with self.assertRaises(ValueError):t.add(self.db,self.root,'bad','javascript:alert(1)')
     def test_export(self):

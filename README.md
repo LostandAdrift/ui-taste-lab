@@ -29,7 +29,7 @@ Images are copied without modifying originals into content-addressed `objects/ab
 
 ### Review
 
-Heart/love, thumbs up/like and thumbs down/dislike save the current note. Skip removes an item from the active queue; find it again in Collection and revise its reaction. Undo reverses the most recent non-undone vote. Keys: H/L/D/S/U. Search covers titles, notes and tag values. Filters include platform and reaction. Explicit global preferences are separate from reference notes; tag patterns are labeled tentative and cite reference IDs. Dislike notes apply only to that reference, not every tag it contains.
+Use Add reference to upload an image (up to 20 MB), save a link, or attach a source to an image. Edit placement, component, platform and style on any reference. Heart/love, thumbs up/like and thumbs down/dislike save the current note. Skip removes an item from the active queue; find it again in Collection and revise its reaction. Undo reverses the most recent non-undone vote. Keys: H/L/D/S/U. Search covers titles, notes and tag values. Filters include platform and reaction. Explicit global preferences are separate from reference notes; tag patterns are labeled tentative and cite reference IDs. Dislike notes apply only to that reference, not every tag it contains.
 
 A link-only card deliberately displays no borrowed thumbnail. Open the original source to review; import a personally permitted image for an image-first card. Nothing embeds remote tracking images. The app never executes downloaded demo code.
 
@@ -38,7 +38,7 @@ A link-only card deliberately displays no borrowed thumbnail. Open the original 
 ```sh
 # Import queued local JSON or JSONL manifests; safe offline default:
 python tastelab.py discover
-# Fetch fresh official RSS metadata (One Page Love + Smashing Magazine):
+# Fetch fresh official RSS metadata (One Page Love + Lapa Ninja + Smashing Magazine):
 python tastelab.py discover --online
 # Import records obtained by an agent's supported web search:
 python tastelab.py import-candidates /path/to/candidates.jsonl
@@ -55,6 +55,10 @@ Schedule the command at **09:00 America/Los_Angeles daily**, with a timezone-awa
 ## Agent interface
 
 See [AGENTS.md](AGENTS.md). All CLI output for machine operations is JSON. `/api/items`, `/api/profile`, `/api/export` are GET endpoints. Mutation endpoints require the per-process `X-Taste-Token` returned by `/api/session`; see the bundled JS for request bodies. Server binds **127.0.0.1 only**, rejects foreign Host headers, has no CORS allowance, and escapes reference text through DOM text nodes. This is a trusted single-user local tool, not a multi-user service. Other local processes can access it.
+
+## Linux desktop setup
+
+Run `python install-local.py` to install a user systemd service and application launcher. It starts on login and binds localhost only. Stop with `systemctl --user disable --now ui-taste-lab.service`. The service points to this checkout, so keep the checkout in place. This installer does not create a discovery schedule.
 
 ## Check
 

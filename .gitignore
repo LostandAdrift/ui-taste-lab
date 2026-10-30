@@ -9,3 +9,5 @@ exports/
 inbox/
 .superdesign/
 test-results/
+output/
+.playwright-cli/

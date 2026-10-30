@@ -2,6 +2,7 @@
 """UI Taste Lab: local reference review, CLI and JSON API. Python 3.11+."""
 import xml.etree.ElementTree as ET
 import re
+import base64
 import argparse, contextlib, hashlib, json, mimetypes, os, secrets, shutil, sqlite3, tempfile, urllib.request, urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,10 +49,12 @@ def items(db):
 def add(db, root, title, source='', image=None, tags=None, discovery_day=None):
     if source and urlparse(source).scheme not in ('https','http'): raise ValueError('Source must use http or https')
     image_name=''
+    tags=dict(tags or {})
     if image:
         path=Path(image).expanduser().resolve()
         if path.suffix.lower() not in EXTS or not path.is_file(): raise ValueError('Unsupported image file')
         if path.stat().st_size > 40*1024*1024: raise ValueError('Image exceeds 40 MB')
+        tags.setdefault('original_filename',path.name)
         digest=hashlib.sha256(path.read_bytes()).hexdigest()
         image_name=f'objects/{digest[:2]}/{digest}{path.suffix.lower()}'
         target=root/image_name; target.parent.mkdir(parents=True,exist_ok=True)
@@ -167,6 +170,7 @@ def discover(db,root,manifest=None,online=False):
                         link=entry.findtext('link')
                         if not link:continue
                         candidates.append((entry.findtext('title') or link,link,{'platform':'web','placement':source['placement'],'provenance':source['url'],'published_at':entry.findtext('pubDate') or '', 'snippet':re.sub('<[^>]+>','',entry.findtext('description') or '')[:500],'preview':'link-only'}))
+                if source.get('limit_per_run'):candidates=candidates[:source['limit_per_run']]
                 buckets.append(candidates)
             except (OSError,ValueError,KeyError,ET.ParseError) as e: errors.append({'source':source['name'],'error':str(e)})
         # Round-robin sources so a single prolific feed cannot consume the batch.
@@ -215,7 +219,7 @@ def serve(root,port):
             if not self.valid() or self.headers.get('X-Taste-Token')!=token: return self.send(403,{'error':'Missing session token'})
             try:
                 size=int(self.headers.get('Content-Length','0'))
-                if size>20000: raise ValueError('Request too large')
+                if size>(29*1024*1024 if self.path=='/api/upload' else 20000): raise ValueError('Request too large')
                 body=json.loads(self.rfile.read(size))
                 with contextlib.closing(connect(root)) as db:
                     if self.path=='/api/vote': vote(db,body['id'],body['vote'],body.get('note',''))
@@ -224,7 +228,21 @@ def serve(root,port):
                         tags=body['tags']
                         if not isinstance(tags,dict):raise ValueError('Tags must be an object')
                         db.execute('UPDATE items SET tags=? WHERE id=?',(json.dumps(tags),body['id']));db.commit()
-                    elif self.path=='/api/add': add(db,root,body['title'],body['source'],tags=body.get('tags',{}))
+                    elif self.path=='/api/upload':
+                        ext=Path(body['filename']).suffix.lower()
+                        if ext not in EXTS:raise ValueError('Unsupported image extension')
+                        raw=base64.b64decode(body['image'],validate=True)
+                        if len(raw)>20*1024*1024:raise ValueError('Image exceeds 20 MB upload limit')
+                        valid=(raw.startswith(b'\x89PNG\r\n\x1a\n') or raw.startswith(b'\xff\xd8\xff') or raw.startswith((b'GIF87a',b'GIF89a')) or (raw[:4]==b'RIFF' and raw[8:12]==b'WEBP') or raw[4:8]==b'ftyp')
+                        if not valid:raise ValueError('File does not appear to be an image')
+                        fd,tmp=tempfile.mkstemp(suffix=ext)
+                        try:
+                            with os.fdopen(fd,'wb') as f:f.write(raw)
+                            key=add(db,root,body['title'],body.get('source',''),tmp,{**body.get('tags',{}),'original_filename':Path(body['filename']).name})
+                            if not key:raise ValueError('Duplicate reference or queue is full')
+                        finally:os.unlink(tmp)
+                    elif self.path=='/api/add':
+                        if not add(db,root,body['title'],body['source'],tags=body.get('tags',{})):raise ValueError('Duplicate reference or queue is full')
                     elif self.path=='/api/preferences':
                         db.execute("INSERT OR REPLACE INTO settings VALUES ('preferences',?)",(str(body['text'])[:10000],));db.commit()
                     else: return self.send(404,{})

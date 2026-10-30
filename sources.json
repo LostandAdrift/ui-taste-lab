@@ -30,11 +30,20 @@
       "placement": "landing page"
     },
     {
+      "name": "Lapa Ninja",
+      "url": "https://www.lapa.ninja/index.xml",
+      "automated": true,
+      "adapter": "rss",
+      "placement": "landing page",
+      "reason": "Official metadata feed only; no scraping or bulk image downloads."
+    },
+    {
       "name": "Smashing Magazine",
       "url": "https://www.smashingmagazine.com/feed/",
       "automated": true,
       "adapter": "rss",
-      "placement": "editorial / design techniques"
+      "placement": "editorial / design techniques",
+      "limit_per_run": 3
     }
   ]
 }
