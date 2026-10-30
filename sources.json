@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "Game UI Database",
+      "url": "https://www.gameuidatabase.com/",
+      "automated": false,
+      "adapter": "manual",
+      "reason": "Crawler blocked; add individual source links or personally permitted local files."
+    },
+    {
+      "name": "Interface In Game",
+      "url": "https://interfaceingame.com/",
+      "automated": false,
+      "adapter": "manual",
+      "reason": "Terms prohibit crawling and scraping."
+    },
+    {
+      "name": "Mobbin",
+      "url": "https://mobbin.com/",
+      "automated": false,
+      "adapter": "manual",
+      "reason": "No mirrored reference repository; save links only."
+    },
+    {
+      "name": "One Page Love",
+      "url": "https://onepagelove.com/feed",
+      "automated": true,
+      "adapter": "rss",
+      "placement": "landing page"
+    },
+    {
+      "name": "Smashing Magazine",
+      "url": "https://www.smashingmagazine.com/feed/",
+      "automated": true,
+      "adapter": "rss",
+      "placement": "editorial / design techniques"
+    }
+  ]
+}
